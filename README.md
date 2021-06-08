@@ -1,5 +1,5 @@
 # ozone-web-map
-R Script to create ozone web map application
+R Script to create ozone web map application | By Mark A. Prettyman and Shane Cone (https://github.com/microscone) 
 
 This script analyzes historic ambient ozone concentration data in order to estimate the current year's "year-to-date" 4th maximum 8-hour average ozone concentration for the year for each monitor in the US, as well as the 3-year design value for ozone, to include the current year.  The resulting data is displayed as a web map, created with Leaflet for R.
 

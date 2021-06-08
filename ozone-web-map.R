@@ -1,7 +1,6 @@
 #R Script to analyze ambient ozone concentrations at US monitors
 #and visualize the data as a web map using Leaflet for R
-#Developed by Mark A. Prettyman, DE DNREC DAQ
-#with contributions from Shane Cone
+#Developed by Mark A. Prettyman with contributions from Shane Cone
 
 library(httr)
 library(jsonlite)
@@ -28,11 +27,18 @@ library(rgdal)
 library(RAQSAPI)
 library(keyring)
 
-#--------------------------
-# OBTAINING AMBIENT OZONE DATA FROM AIRNOW
 
 #load data frame monitors and their associated nonattainment areas in the country
-load('C:/airnow/NAA_list.RData')
+load('NAA_list.RData')
+
+# reading JSON file for state
+US_states <- topojson_read("US_States_4326.json")
+
+# reading JSON file for NAA boundaries as a "simple feature" object
+US_2015_O3_NAA <- topojson_read("US_2015_ozone_NAA_4326.json")
+
+#--------------------------
+# OBTAINING AMBIENT OZONE DATA FROM AIRNOW
 
 #Enter the year of data you want to analyze
 Year_to_analyze <- "2021"
@@ -116,9 +122,6 @@ colnames(dataset) <- headers
 #copying data frame to a new working data frame
 AQ2021 <- dataset
 
-#converting Date field from a character to a date.
-# AQ2021$POSIX.Date <- as.POSIXct(paste0(AQ2021$Date,"20"), format = '%m/%d/%Y')
-
 #creates a field for "Country Code" as a 3 digit subset of the AQS ID field
 AQ2021$CountryCode <- substring(AQ2021$AQSID,1,3)
 
@@ -200,8 +203,9 @@ US_Pivot_Coords$Data_Date <- today.date_vec_1
 
 #--------------------------
 # OBTAINS HISTORIC 4TH MAX VALUES FOR PRIOR YEARS FROM AQS DATA MART
+# This section can be commented out after running for the first time.
 
-#set username as email
+#set username as email address used for AQS Data Mart
 my.email <- "abc@def.com"
 
 #keyring package and functions used to store and manage AQS credentials
@@ -350,11 +354,6 @@ title <- tags$div(
   tag.map.title, HTML(paste0("AirNow Data From ",ozone_start_date," Through ",Date_Today))
 )  
 
-setwd(airnow_folder)
-
-# reading JSON file for NAA boundaries as a "simple feature" object
-#US_2015_O3_NAA <- geojson_sf("US_2015_ozone_NAA_4326.geojson")
-US_2015_O3_NAA <- topojson_read("US_2015_ozone_NAA_4326.json")
 
 #unique list of NAAs and the design value site for each, based upon highes draft 2021 DV
 NAA_DV_Site <- US_2021DV %>%
@@ -372,9 +371,6 @@ temp_polygon <- US_2015_O3_NAA %>%
 #design value data of NAA_DV_Site is merged with the spatial data of the NAA polygons, to create a new layer
 new_NAA_Polygons <- merge(temp_polygon,NAA_DV_Site,by.x='area_name',by.y='NAA_Name')
 
-# reading JSON file for state
-#US_states <- geojson_sf("US_States_4326.geojson")
-US_states <- topojson_read("US_States_4326.json")
 
 #creates a orange color palette for the various NAA classifications
 naa_pal <- colorFactor(
@@ -388,7 +384,7 @@ map_combined <- leaflet() %>%
   setView(-77, 39, zoom = 5) %>%
   
   #attribution data is added to the map
-  addTiles(attribution = paste0('<a href=\"https://dnrec.alpha.delaware.gov/\">DE DNREC</a> - Mark Prettyman & Shane Cone, Created ',
+  addTiles(attribution = paste0('Mark Prettyman & Shane Cone, Created ',
                                 Date_Today+1)) %>%
   
   #a basemap is added
@@ -520,7 +516,7 @@ map_combined <- leaflet() %>%
   addControl(title, position = "topright", className="map-title") 
 
 #calling the map object
-#map_combined
+map_combined
 
 #---------------------------------
 # EXPORT MAP TO STANDALONE HTML FILE AND UPLOAD TO FTP SITE
@@ -543,7 +539,7 @@ write.csv(US_Pivot_Coords, file = fileName2,row.names = FALSE)
 fileName3 <- "US_DesignValues.csv"
 write.csv(US_2021DV,file = fileName3,row.names = FALSE)
 
-#uploads html file to FTP
+#uploads html file to FTP (edit to specific FTP address)
 login <- "login"
 secret <- "password"
 uploadSite <- "sftp://abc"
@@ -569,11 +565,7 @@ ftpUpload(paste0(YOC_folder,"/",fileName3),
           userpwd = paste0(login,":",secret))
 
 
-
-
-
- 
-# #example code to export as a shapefile
+# # Example code to export as a shapefile
 # abc <- US_Pivot_Coords %>%
 #   st_as_sf(coords = c("Longitude","Latitude"))
 # CRS(abc)

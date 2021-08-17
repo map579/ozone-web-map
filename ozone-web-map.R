@@ -366,7 +366,7 @@ NAA_DV_Site <- US_2021DV %>%
 #temporary simple feature object, using a subset of fields
 temp_polygon <- US_2015_O3_NAA %>%
   select(c(1,2,3,4,5,8,9,12,26,28,32,63,64)) %>%
-  mutate(Designation_DV = design_value*1000)
+  mutate(Designation_DV = original_design_value*1000)
 
 #design value data of NAA_DV_Site is merged with the spatial data of the NAA polygons, to create a new layer
 new_NAA_Polygons <- merge(temp_polygon,NAA_DV_Site,by.x='area_name',by.y='NAA_Name')
